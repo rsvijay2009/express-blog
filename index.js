@@ -13,14 +13,6 @@ app.use(express.json());
 app.use('/api/v1/', require('./routes/auth'));
 app.use(errorHandler);
 
-
-
-app.get('/api/v1/test', (req, res) => {
-    res.send('Test route')
-});
-
-
-
 app.listen(port, () => {
     console.log(`Server is running at ${port}`);
 })
