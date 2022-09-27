@@ -21,6 +21,9 @@ const signup = asyncHandler(async (req, res) => {
     res.status(201).json(user)
 });
 
+// @desc User login
+// @route GET /api/v1/login
+// @access Private
 const login = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
   
@@ -29,9 +32,10 @@ const login = asyncHandler(async (req, res) => {
     }
     const body = req.body;
     const user = await User.findOne({ Email: body.Email });
+
     if (user) {
-      // check user password with hashed password stored in the database
       const validPassword = await bcrypt.compare(body.Password, user.Password);
+
       if (validPassword) {
         res.status(200).json(user);
       } else {
@@ -40,10 +44,6 @@ const login = asyncHandler(async (req, res) => {
     } else {
       res.status(401).json({ error: "User does not exist" });
     }
-   
-    
-
-    
 });
 
 module.exports = {
