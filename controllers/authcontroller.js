@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler')
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const jwt    = require('jsonwebtoken');
+const config = require('../config/jwt');
 const saltRounds = 10;
 
 // @desc Create  new user
@@ -14,7 +16,7 @@ const signup = asyncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    
+
     body.Password = bcrypt.hashSync(body.Password, saltRounds);
     const user = await User.create(body);
 
@@ -37,7 +39,22 @@ const login = asyncHandler(async (req, res) => {
       const validPassword = await bcrypt.compare(body.Password, user.Password);
 
       if (validPassword) {
-        res.status(200).json(user);
+        const payload = {
+            id:  user._id
+        };
+
+        const token = jwt.sign(payload, config.secret, {
+            expiresIn: 1440 // expires in 24 hours
+        });
+
+        res.status(200).json({
+            data : {
+                FirstName: user.FirstName,
+                LastName: user.LastName,
+                Email: user.Email,
+                Token: token
+            }
+        });
       } else {
         res.status(400).json({ error: "Invalid Password" });
       }

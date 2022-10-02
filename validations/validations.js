@@ -29,4 +29,18 @@ const loginValidation = [
      body('Password', 'Password must be 4 or more characters').isLength({ min: 4 })
 ]
 
-module.exports = {signUpValidation, loginValidation, validationResult}
+const PostValidation = [
+  body('Title')
+    .not().isEmpty().withMessage('Title is required'),
+    body('Content')
+    .not().isEmpty().withMessage('Content is required'),
+];
+
+const CommentValidation = [
+  body('PostId')
+    .not().isEmpty().withMessage('Post ID is required'),
+    body('Comment')
+    .not().isEmpty().withMessage('Comment is required'),
+]
+
+module.exports = {signUpValidation, loginValidation, validationResult, PostValidation, CommentValidation}

@@ -11,6 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/v1/', require('./routes/auth'));
+app.use('/api/v1/', require('./routes/post'));
 app.use(errorHandler);
 
 app.listen(port, () => {
