@@ -5,10 +5,6 @@ const jwt    = require('jsonwebtoken');
 const config = require('../config/jwt');
 const mongoose = require('mongoose');
 
-
-// @desc Create  new post
-// @route GET /api/v1/createPost
-// @access Private
 const createPost = asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     const body = {...req.body};
@@ -24,25 +20,21 @@ const createPost = asyncHandler(async (req, res, next) => {
     res.status(201).json(post)
 });
 
-// @desc Get  user posts
-// @route GET /api/v1/posts
-// @access Private
 const userPosts = asyncHandler(async (req, res, next) => {
-    const token = req.headers.authorization;;
+    const token = req.session.token || null;
    
     if (token) {
-        // verifies secret and checks if the token is expired
         jwt.verify(token, config.secret, async (err, decoded) => {
             const userId = decoded.id;
 
             if (err) {
-                return res.status(401).json({ code : 401, message: 'Unauthorized' });    
+                return res.status(401).json({ code : 401, message: 'Unauthorized' });
             } else {
                 let page = (req.query.page) ? parseInt(req.query.page) : 1;
                 const limit = 5;
                 const skip = (page - 1) * limit;
                 const total = await Post.countDocuments({Author: userId});
-                const posts = await Post.find({Author: userId}).skip(skip).limit(limit)
+                const posts = await Post.find({Author: userId}).sort({'createdAt': -1}).skip(skip).limit(limit)
                     
                 return res.status(200).json({
                     data:posts,
@@ -57,11 +49,72 @@ const userPosts = asyncHandler(async (req, res, next) => {
         });
   
     } else {
-           return res.status(401).json({ code : 401, message: 'Unauthorized' });   
+        return res.status(401).json({ code : 401, message: 'Unauthorized' });
+    }
+});
+
+const updateUserPost = asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    const body = {...req.body};
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const postId = req.params.id;
+    const token = req.headers.authorization;;
+
+    if (token) {
+        jwt.verify(token, config.secret, async (err, decoded) => {
+            const userId = mongoose.Types.ObjectId(decoded.id);
+            console.log(userId);
+            if (err) {
+                return res.status(401).json({ code : 401, message: 'Unauthorized' });
+            } else {
+                const post = await Post.findById(postId);
+                if(post.Author.equals(userId)) {
+                    const option = {new: true}
+                    const post = await Post.findOneAndUpdate(postId, body, option)
+                    return res.status(200).json({ code : 200, data: post });
+                } else {
+                    return res.status(401).json({ code : 401, message: 'Unauthorized' });
+                }
+            }
+        });
+    } else {
+        return res.status(401).json({ code : 401, message: 'Unauthorized' });
+    }
+});
+
+const deleteUserPost = asyncHandler(async (req, res, next) => {
+    const postId = req.params.id;
+    const token = req.headers.authorization;
+
+    if (token) {
+        jwt.verify(token, config.secret, async (err, decoded) => {
+            const userId = mongoose.Types.ObjectId(decoded.id);
+            if (err) {
+                return res.status(401).json({ code : 401, message: 'Unauthorized' });
+            } else {
+                const post = await Post.findById(postId);
+                if(!post) {
+                    return res.status(200).json({ code : 200, message: 'Post not found' });
+                }
+                if(post.Author.equals(userId)) {
+                    await Post.findByIdAndRemove(postId);
+                    return res.status(200).json({ code : 200, message: 'Post removed successfully' });
+                } else {
+                    return res.status(401).json({ code : 401, message: 'Unauthorized' });
+                }
+            }
+        });
+    } else {
+        return res.status(401).json({ code : 401, message: 'Unauthorized' });
     }
 });
 
 module.exports = {
     createPost,
-    userPosts
+    userPosts,
+    updateUserPost,
+    deleteUserPost
 }

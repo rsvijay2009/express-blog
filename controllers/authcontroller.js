@@ -6,9 +6,6 @@ const jwt    = require('jsonwebtoken');
 const config = require('../config/jwt');
 const saltRounds = 10;
 
-// @desc Create  new user
-// @route GET /api/v1/signup
-// @access Private
 const signup = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     const body = {...req.body}
@@ -23,9 +20,6 @@ const signup = asyncHandler(async (req, res) => {
     res.status(201).json(user)
 });
 
-// @desc User login
-// @route GET /api/v1/login
-// @access Private
 const login = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
   
@@ -47,13 +41,14 @@ const login = asyncHandler(async (req, res) => {
             expiresIn: 1440 // expires in 24 hours
         });
 
+        req.session.token = token;
         res.status(200).json({
-            data : {
-                FirstName: user.FirstName,
-                LastName: user.LastName,
-                Email: user.Email,
-                Token: token
-            }
+          data : {
+            FirstName: user.FirstName,
+            LastName: user.LastName,
+            Email: user.Email,
+            Token: token
+          }
         });
       } else {
         res.status(400).json({ error: "Invalid Password" });
@@ -63,7 +58,17 @@ const login = asyncHandler(async (req, res) => {
     }
 });
 
+const logout = asyncHandler(async (req, res) => {
+  req.session.destroy();
+
+  res.status(200).json({
+    success: true,
+    message: "You have been Logged Out"
+  });
+});
+
 module.exports = {
     signup,
-    login
+    login,
+    logout
 }
